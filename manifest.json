@@ -1,12 +1,21 @@
 {
   "manifest_version": 3,
   "name": "FIFA Autofill",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Auto-fill FIFA forms from CSV data with Alt+A hotkey",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "scripting"
   ],
+  "commands": {
+    "autofill": {
+      "suggested_key": {
+        "default": "Alt+A"
+      },
+      "description": "Autofill form fields"
+    }
+  },
   "web_accessible_resources": [
     {
       "resources": ["accounts.csv"],
