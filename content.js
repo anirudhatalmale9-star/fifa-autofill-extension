@@ -1,7 +1,7 @@
 /**
  * FIFA AUTOFILL - Content Script
  * Auto-fills FIFA forms with account data using Alt+A hotkey
- * Chrome/Mimic compatible
+ * Chrome/Mimic compatible - Enhanced for payment pages
  */
 
 (function() {
@@ -14,7 +14,6 @@
       'input[name="email"]',
       'input[type="email"]',
       'input[id*="email" i]',
-      'input[id="email"]',
       'input#email',
       'input[placeholder*="email" i]',
       'input[autocomplete="email"]',
@@ -67,6 +66,7 @@
       'input[name="address1"]',
       'input[name="address_line_1"]',
       'input[name="street"]',
+      'input[name="addressLine1"]',
       'input[id*="address" i]',
       'input#address_line_1',
       'input[placeholder*="address" i]',
@@ -140,38 +140,56 @@
       'input[name="card_number"]',
       'input[name="ccnumber"]',
       'input[name="pan"]',
+      'input[name="number"]',
+      'input[name="cardnumber"]',
       'input[id*="cardNumber" i]',
       'input[id*="card-number" i]',
       'input[id*="card_number" i]',
+      'input[id*="cardnumber" i]',
+      'input[id*="cc-number" i]',
+      'input[id*="encryptedCardNumber" i]',
       'input[placeholder*="card number" i]',
       'input[placeholder*="1234" i]',
+      'input[placeholder*="0000" i]',
       'input[autocomplete="cc-number"]',
-      'input[data-testid*="card" i]'
+      'input[data-testid*="card" i]',
+      'input[data-fieldtype="encryptedCardNumber"]',
+      'input.input-field',
+      'input.js-iframe-input'
     ],
     cvc: [
       'input[name="cvc"]',
       'input[name="cvv"]',
       'input[name="securityCode"]',
       'input[name="security_code"]',
+      'input[name="cid"]',
+      'input[name="encryptedSecurityCode"]',
       'input[id*="cvc" i]',
       'input[id*="cvv" i]',
       'input[id*="security" i]',
+      'input[id*="encryptedSecurityCode" i]',
       'input[placeholder*="cvc" i]',
       'input[placeholder*="cvv" i]',
       'input[placeholder*="security" i]',
-      'input[autocomplete="cc-csc"]'
+      'input[placeholder*="123" i]',
+      'input[autocomplete="cc-csc"]',
+      'input[data-fieldtype="encryptedSecurityCode"]'
     ],
     card_expiry: [
       'input[name="expiry"]',
       'input[name="expiryDate"]',
       'input[name="expiration"]',
       'input[name="exp"]',
+      'input[name="encryptedExpiryDate"]',
       'input[id*="expir" i]',
-      'input[id*="exp" i]',
+      'input[id*="exp-date" i]',
+      'input[id*="encryptedExpiryDate" i]',
       'input[placeholder*="expir" i]',
       'input[placeholder*="mm/yy" i]',
       'input[placeholder*="mm / yy" i]',
-      'input[autocomplete="cc-exp"]'
+      'input[placeholder*="MM/YY" i]',
+      'input[autocomplete="cc-exp"]',
+      'input[data-fieldtype="encryptedExpiryDate"]'
     ],
     card_name: [
       'input[name="cardholderName"]',
@@ -179,9 +197,12 @@
       'input[name="nameOnCard"]',
       'input[name="card_holder"]',
       'input[name="holderName"]',
+      'input[name="name"]',
+      'input[name="ccname"]',
       'input[id*="cardholderName" i]',
       'input[id*="cardholder" i]',
       'input[id*="holder" i]',
+      'input[id*="ccname" i]',
       'input[placeholder*="name on card" i]',
       'input[placeholder*="cardholder" i]',
       'input[placeholder*="card holder" i]',
@@ -196,6 +217,7 @@
 
     // Focus the element
     element.focus();
+    element.click();
 
     // For select elements
     if (element.tagName === 'SELECT') {
@@ -211,6 +233,9 @@
       return false;
     }
 
+    // Clear the field first
+    element.value = '';
+
     // For React forms - use native setter
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
     nativeInputValueSetter.call(element, value);
@@ -218,33 +243,49 @@
     // Trigger all necessary events
     element.dispatchEvent(new Event('input', { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
     element.dispatchEvent(new Event('blur', { bubbles: true }));
 
     return true;
   }
 
-  // Find and fill a field
-  function fillField(fieldName, value) {
+  // Find and fill a field in a document (main or iframe)
+  function fillFieldInDocument(doc, fieldName, value) {
     if (!value) return false;
 
     const selectors = FIELD_MAPPINGS[fieldName];
     if (!selectors) return false;
 
-    // Try main document first
+    // Try all selectors
     for (const selector of selectors) {
       try {
-        const element = document.querySelector(selector);
-        if (element && (element.offsetParent !== null || element.offsetHeight > 0)) {
-          console.log(`[FIFA Autofill] Filling ${fieldName}:`, selector);
-          setValue(element, value);
-          return true;
+        const elements = doc.querySelectorAll(selector);
+        for (const element of elements) {
+          if (element && (element.offsetParent !== null || element.offsetHeight > 0 || element.offsetWidth > 0)) {
+            console.log(`[FIFA Autofill] Found ${fieldName}:`, selector, element);
+            setValue(element, value);
+            return true;
+          }
         }
       } catch (e) {
         // Selector may be invalid, skip
       }
     }
 
-    // Try to find by label text
+    return false;
+  }
+
+  // Find and fill a field (checks main doc and same-origin iframes)
+  function fillField(fieldName, value) {
+    if (!value) return false;
+
+    // Try main document first
+    if (fillFieldInDocument(document, fieldName, value)) {
+      return true;
+    }
+
+    // Try to find by label text in main document
     const labels = document.querySelectorAll('label');
     for (const label of labels) {
       const labelText = label.textContent.toLowerCase();
@@ -259,13 +300,27 @@
             return true;
           }
         }
-        // Try input inside label
         const input = label.querySelector('input, select');
         if (input) {
           console.log(`[FIFA Autofill] Filling ${fieldName} via label child`);
           setValue(input, value);
           return true;
         }
+      }
+    }
+
+    // Try same-origin iframes
+    const iframes = document.querySelectorAll('iframe');
+    for (const iframe of iframes) {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        if (iframeDoc && fillFieldInDocument(iframeDoc, fieldName, value)) {
+          console.log(`[FIFA Autofill] Filled ${fieldName} in iframe`);
+          return true;
+        }
+      } catch (e) {
+        // Cross-origin iframe, can't access
+        console.log(`[FIFA Autofill] Cannot access iframe (cross-origin):`, iframe.src);
       }
     }
 
@@ -281,25 +336,50 @@
     const parts = expiry.split('/');
     if (parts.length !== 2) return false;
 
-    const month = parts[0].trim();
+    const month = parts[0].trim().padStart(2, '0');
     let year = parts[1].trim();
 
     // Convert 2-digit year to 4-digit if needed
     if (year.length === 2) {
       year = '20' + year;
     }
+    const shortYear = year.slice(-2);
 
     let filled = false;
 
+    // Try combined expiry field first (MM/YY format)
+    const combinedSelectors = [
+      'input[name*="expir" i]',
+      'input[id*="expir" i]',
+      'input[placeholder*="mm/yy" i]',
+      'input[placeholder*="MM/YY" i]',
+      'input[autocomplete="cc-exp"]',
+      'input[data-fieldtype="encryptedExpiryDate"]'
+    ];
+
+    for (const sel of combinedSelectors) {
+      const field = document.querySelector(sel);
+      if (field && field.tagName === 'INPUT') {
+        const expiryFormatted = month + '/' + shortYear;
+        setValue(field, expiryFormatted);
+        console.log('[FIFA Autofill] Filled combined expiry:', expiryFormatted);
+        return true;
+      }
+    }
+
     // Try month dropdown
-    const monthSelectors = ['select[id*="month" i]', 'select[name*="month" i]', 'select[aria-label*="month" i]'];
+    const monthSelectors = [
+      'select[id*="month" i]',
+      'select[name*="month" i]',
+      'select[aria-label*="month" i]',
+      'select[id*="expiry" i][id*="month" i]'
+    ];
     for (const sel of monthSelectors) {
       const monthSelect = document.querySelector(sel);
       if (monthSelect) {
-        // Try to match month value
         for (const opt of monthSelect.options) {
           if (opt.value === month || opt.value === parseInt(month).toString() ||
-              opt.textContent.includes(month)) {
+              opt.textContent.includes(month) || opt.value.padStart(2, '0') === month) {
             monthSelect.value = opt.value;
             monthSelect.dispatchEvent(new Event('change', { bubbles: true }));
             filled = true;
@@ -312,13 +392,18 @@
     }
 
     // Try year dropdown
-    const yearSelectors = ['select[id*="year" i]', 'select[name*="year" i]', 'select[aria-label*="year" i]'];
+    const yearSelectors = [
+      'select[id*="year" i]',
+      'select[name*="year" i]',
+      'select[aria-label*="year" i]',
+      'select[id*="expiry" i][id*="year" i]'
+    ];
     for (const sel of yearSelectors) {
       const yearSelect = document.querySelector(sel);
       if (yearSelect) {
         for (const opt of yearSelect.options) {
-          if (opt.value === year || opt.value === year.slice(-2) ||
-              opt.textContent.includes(year) || opt.textContent.includes(year.slice(-2))) {
+          if (opt.value === year || opt.value === shortYear ||
+              opt.textContent.includes(year) || opt.textContent.includes(shortYear)) {
             yearSelect.value = opt.value;
             yearSelect.dispatchEvent(new Event('change', { bubbles: true }));
             filled = true;
@@ -333,6 +418,57 @@
     return filled;
   }
 
+  // Detect if we're on a payment page
+  function isPaymentPage() {
+    const url = window.location.href.toLowerCase();
+    const pageText = document.body?.innerText?.toLowerCase() || '';
+
+    return url.includes('payment') ||
+           url.includes('checkout') ||
+           url.includes('pay') ||
+           pageText.includes('card number') ||
+           pageText.includes('credit card') ||
+           pageText.includes('payment method') ||
+           document.querySelector('input[autocomplete="cc-number"]') !== null;
+  }
+
+  // Log all inputs on page for debugging
+  function logPageInputs() {
+    console.log('[FIFA Autofill] === PAGE INPUT ANALYSIS ===');
+    const inputs = document.querySelectorAll('input, select');
+    console.log(`[FIFA Autofill] Found ${inputs.length} inputs on main page`);
+
+    inputs.forEach((input, i) => {
+      if (input.type !== 'hidden') {
+        console.log(`[FIFA Autofill] Input ${i}:`, {
+          tag: input.tagName,
+          type: input.type,
+          name: input.name,
+          id: input.id,
+          placeholder: input.placeholder,
+          autocomplete: input.autocomplete,
+          class: input.className
+        });
+      }
+    });
+
+    // Check iframes
+    const iframes = document.querySelectorAll('iframe');
+    console.log(`[FIFA Autofill] Found ${iframes.length} iframes`);
+    iframes.forEach((iframe, i) => {
+      console.log(`[FIFA Autofill] Iframe ${i}:`, iframe.src || iframe.id || 'no-src');
+      try {
+        const iframeDoc = iframe.contentDocument;
+        if (iframeDoc) {
+          const iframeInputs = iframeDoc.querySelectorAll('input');
+          console.log(`[FIFA Autofill] Iframe ${i} has ${iframeInputs.length} inputs`);
+        }
+      } catch(e) {
+        console.log(`[FIFA Autofill] Iframe ${i} is cross-origin (cannot access)`);
+      }
+    });
+  }
+
   // Main autofill function
   async function autofillForm(account) {
     if (!account) {
@@ -342,6 +478,9 @@
 
     console.log('[FIFA Autofill] Starting autofill with account:', account.email);
     console.log('[FIFA Autofill] Account data:', account);
+
+    // Log page structure for debugging
+    logPageInputs();
 
     let filledCount = 0;
 
@@ -354,7 +493,7 @@
       }
     }
 
-    // Special handling for expiry date (month/year dropdowns)
+    // Special handling for expiry date (month/year dropdowns or combined)
     if (account.card_expiry) {
       if (fillExpiryDate(account.card_expiry)) {
         filledCount++;
@@ -371,7 +510,22 @@
     if (filledCount > 0) {
       showNotification(`Filled ${filledCount} fields for ${account.email}`);
     } else {
-      showNotification('No matching fields found on this page', true);
+      // Check if payment fields are in iframes
+      const iframes = document.querySelectorAll('iframe');
+      let hasPaymentIframe = false;
+      for (const iframe of iframes) {
+        if (iframe.src && (iframe.src.includes('adyen') || iframe.src.includes('stripe') ||
+            iframe.src.includes('checkout') || iframe.src.includes('payment'))) {
+          hasPaymentIframe = true;
+          break;
+        }
+      }
+
+      if (hasPaymentIframe || isPaymentPage()) {
+        showNotification('Card fields are in a secure iframe. Please fill card details manually.', true);
+      } else {
+        showNotification('No matching fields found on this page', true);
+      }
     }
   }
 
@@ -395,11 +549,12 @@
       z-index: 999999;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 350px;
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
 
-    setTimeout(() => notification.remove(), 4000);
+    setTimeout(() => notification.remove(), 5000);
   }
 
   // Get selected account from storage and autofill
