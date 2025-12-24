@@ -110,10 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
       'expiry': 'card_expiry',
       'exp': 'card_expiry',
       'expiry_date': 'card_expiry',
+      'expiration date': 'card_expiry',
+      'expiration_date': 'card_expiry',
       'card_name': 'card_name',
       'card name': 'card_name',
       'cardholder': 'card_name',
-      'cardholder_name': 'card_name'
+      'cardholder_name': 'card_name',
+      'gender': 'gender',
+      'language': 'language'
     };
 
     // Normalize headers
