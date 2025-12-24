@@ -267,18 +267,81 @@
       try {
         const elements = doc.querySelectorAll(selector);
         for (const element of elements) {
-          if (element && (element.offsetParent !== null || element.offsetHeight > 0 || element.offsetWidth > 0)) {
+          // More lenient visibility check - just check if element exists and is not hidden
+          const style = window.getComputedStyle(element);
+          const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+          if (element && isVisible) {
             console.log(`[FIFA Autofill] Found ${fieldName}:`, selector, element);
             setValue(element, value);
             return true;
           }
         }
       } catch (e) {
-        // Selector may be invalid, skip
+        console.log(`[FIFA Autofill] Selector error for ${fieldName}:`, e.message);
       }
     }
 
     return false;
+  }
+
+  // Special function to find FIFA payment fields by label text
+  function fillFIFAPaymentFields(account) {
+    let filled = 0;
+
+    // Find all visible input fields
+    const allInputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"])');
+    console.log('[FIFA Autofill] Found', allInputs.length, 'input fields on page');
+
+    for (const input of allInputs) {
+      const placeholder = (input.placeholder || '').toLowerCase();
+      const name = (input.name || '').toLowerCase();
+      const id = (input.id || '').toLowerCase();
+
+      // Find the label for this input
+      let labelText = '';
+      if (input.id) {
+        const label = document.querySelector(`label[for="${input.id}"]`);
+        if (label) labelText = label.textContent.toLowerCase();
+      }
+      // Also check parent elements for label text
+      let parent = input.parentElement;
+      for (let i = 0; i < 3 && parent; i++) {
+        const parentLabel = parent.querySelector('label');
+        if (parentLabel) {
+          labelText = parentLabel.textContent.toLowerCase();
+          break;
+        }
+        parent = parent.parentElement;
+      }
+
+      console.log('[FIFA Autofill] Input:', { placeholder, name, id, labelText, type: input.type });
+
+      // Card Number
+      if ((placeholder.includes('1234') || labelText.includes('card number') || name.includes('cardnumber') || id.includes('cardnumber')) && account.card_number) {
+        console.log('[FIFA Autofill] Filling card number');
+        setValue(input, account.card_number);
+        filled++;
+        continue;
+      }
+
+      // Card Holder / Name on card
+      if ((placeholder.includes('enter your name') || placeholder.includes('your name') || labelText.includes('card holder') || labelText.includes('cardholder') || name.includes('holder') || id.includes('holder')) && (account.card_name || account.full_name)) {
+        console.log('[FIFA Autofill] Filling card holder');
+        setValue(input, account.card_name || account.full_name);
+        filled++;
+        continue;
+      }
+
+      // CVV
+      if ((placeholder === 'cvv' || placeholder.includes('cvv') || placeholder.includes('cvc') || labelText.includes('security code') || labelText.includes('cvv') || name.includes('cvv') || name.includes('cvc')) && account.cvc) {
+        console.log('[FIFA Autofill] Filling CVV');
+        setValue(input, account.cvc);
+        filled++;
+        continue;
+      }
+    }
+
+    return filled;
   }
 
   // Find and fill a field (checks main doc and same-origin iframes)
@@ -564,25 +627,17 @@
       }
     }
 
+    // If on payment page and didn't fill card fields, try the special FIFA payment function
+    if (isPaymentPage()) {
+      console.log('[FIFA Autofill] Payment page detected, trying FIFA-specific payment fill...');
+      const paymentFilled = fillFIFAPaymentFields(account);
+      filledCount += paymentFilled;
+    }
+
     if (filledCount > 0) {
       showNotification(`Filled ${filledCount} fields for ${account.email}`);
     } else {
-      // Check if payment fields are in iframes
-      const iframes = document.querySelectorAll('iframe');
-      let hasPaymentIframe = false;
-      for (const iframe of iframes) {
-        if (iframe.src && (iframe.src.includes('adyen') || iframe.src.includes('stripe') ||
-            iframe.src.includes('checkout') || iframe.src.includes('payment'))) {
-          hasPaymentIframe = true;
-          break;
-        }
-      }
-
-      if (hasPaymentIframe || isPaymentPage()) {
-        showNotification('Card fields are in a secure iframe. Please fill card details manually.', true);
-      } else {
-        showNotification('No matching fields found on this page', true);
-      }
+      showNotification('No matching fields found on this page. Check console (F12) for details.', true);
     }
   }
 
