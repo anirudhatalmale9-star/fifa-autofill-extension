@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FIFA Autofill",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Auto-fill FIFA forms from CSV data with Alt+A hotkey",
   "permissions": [
     "activeTab",
@@ -15,15 +15,16 @@
   ],
   "host_permissions": [
     "https://*.fifa.com/*",
-    "https://auth.fifa.com/*",
-    "https://*.tickets.fifa.com/*"
+    "https://*.tickets.fifa.com/*",
+    "https://fifa-fwc26-us.tickets.fifa.com/*",
+    "<all_urls>"
   ],
   "content_scripts": [
     {
       "matches": [
         "https://*.fifa.com/*",
-        "https://auth.fifa.com/*",
-        "https://*.tickets.fifa.com/*"
+        "https://*.tickets.fifa.com/*",
+        "https://fifa-fwc26-us.tickets.fifa.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
