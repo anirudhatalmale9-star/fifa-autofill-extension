@@ -1,11 +1,17 @@
 {
   "manifest_version": 3,
   "name": "FIFA Autofill",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Auto-fill FIFA forms from CSV data with Alt+A hotkey",
   "permissions": [
     "activeTab",
     "storage"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["accounts.csv"],
+      "matches": ["<all_urls>"]
+    }
   ],
   "host_permissions": [
     "https://*.fifa.com/*",
