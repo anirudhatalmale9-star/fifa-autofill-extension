@@ -1,5 +1,6 @@
 /**
  * FIFA AUTOFILL - Popup Script
+ * Chrome/Mimic compatible
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,8 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const previewName = document.getElementById('previewName');
   const previewPhone = document.getElementById('previewPhone');
 
+  // Use chrome.storage for Chrome/Mimic compatibility
+  const storage = (typeof chrome !== 'undefined' && chrome.storage) ? chrome.storage.local :
+                  (typeof browser !== 'undefined' && browser.storage) ? browser.storage.local : null;
+
+  if (!storage) {
+    console.error('No storage API available');
+    return;
+  }
+
   // Load saved data on popup open
-  browser.storage.local.get(['accounts', 'selectedRow', 'csvData']).then((result) => {
+  storage.get(['accounts', 'selectedRow', 'csvData'], (result) => {
     if (result.csvData) {
       csvInput.value = result.csvData;
     }
@@ -28,8 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lines.length < 2) return [];
 
     // Parse header - handle various column name formats
-    const headerLine = lines[0].toLowerCase();
-    const headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
+    let headerLine = lines[0].toLowerCase();
+    // Remove trailing comma if present
+    if (headerLine.endsWith(',')) {
+      headerLine = headerLine.slice(0, -1);
+    }
+    let headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
 
     // Map common variations to standard names
     const headerMap = {
@@ -74,38 +88,76 @@ document.addEventListener('DOMContentLoaded', () => {
       'cardholder_name': 'card_name'
     };
 
-    const normalizedHeaders = headers.map(h => headerMap[h] || h);
+    // Normalize headers
+    let normalizedHeaders = headers.map(h => headerMap[h] || h);
+
+    // Check if we have data with more columns than headers (missing card_expiry header)
+    const firstDataLine = lines[1].trim();
+    const firstDataValues = parseCSVLine(firstDataLine);
+
+    // If data has more columns than headers, assume last column is card_expiry
+    if (firstDataValues.length > normalizedHeaders.length) {
+      const diff = firstDataValues.length - normalizedHeaders.length;
+      for (let i = 0; i < diff; i++) {
+        if (!normalizedHeaders.includes('card_expiry')) {
+          normalizedHeaders.push('card_expiry');
+        } else {
+          normalizedHeaders.push('extra_' + i);
+        }
+      }
+    }
+
+    console.log('Headers:', normalizedHeaders);
 
     const accounts = [];
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Handle CSV with quoted values
-      const values = [];
-      let current = '';
-      let inQuotes = false;
-
-      for (let j = 0; j < line.length; j++) {
-        const char = line[j];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          values.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      values.push(current.trim());
+      const values = parseCSVLine(line);
 
       const account = {};
       normalizedHeaders.forEach((header, index) => {
-        account[header] = values[index] || '';
+        if (header && header.trim()) {
+          account[header] = values[index] || '';
+        }
       });
+
+      // If full_name is missing but we have first and last name, create it
+      if (!account.full_name && account.first_name && account.last_name) {
+        account.full_name = account.first_name + ' ' + account.last_name;
+      }
+
+      // Use full_name as card_name if card_name is missing
+      if (!account.card_name && account.full_name) {
+        account.card_name = account.full_name;
+      }
+
+      console.log('Parsed account:', account.email, account);
       accounts.push(account);
     }
     return accounts;
+  }
+
+  // Parse a single CSV line, handling quotes
+  function parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
   }
 
   // Populate account dropdown
@@ -150,16 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const accounts = parseCSV(csv);
+    console.log('Loaded accounts:', accounts);
+
     if (accounts.length === 0) {
       showStatus('No valid accounts found in CSV', true);
       return;
     }
 
-    browser.storage.local.set({
+    storage.set({
       accounts: accounts,
       selectedRow: 0,
       csvData: csv
-    }).then(() => {
+    }, () => {
       populateAccountSelect(accounts, 0);
       showStatus(`Loaded ${accounts.length} accounts!`);
     });
@@ -168,8 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Account select change
   accountSelect.addEventListener('change', () => {
     const selectedRow = parseInt(accountSelect.value);
-    browser.storage.local.get(['accounts']).then((result) => {
-      browser.storage.local.set({ selectedRow: selectedRow });
+    storage.get(['accounts'], (result) => {
+      storage.set({ selectedRow: selectedRow });
       updatePreview(result.accounts[selectedRow]);
     });
   });
