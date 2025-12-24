@@ -136,6 +136,8 @@
 
     // Payment fields - expanded for FIFA payment page
     card_number: [
+      'input[placeholder="1234 1234 1234 1234"]',
+      'input[placeholder*="1234 1234" i]',
       'input[name="cardNumber"]',
       'input[name="card_number"]',
       'input[name="ccnumber"]',
@@ -158,6 +160,8 @@
       'input.js-iframe-input'
     ],
     cvc: [
+      'input[placeholder="CVV"]',
+      'input[placeholder="cvv"]',
       'input[name="cvc"]',
       'input[name="cvv"]',
       'input[name="securityCode"]',
@@ -192,12 +196,13 @@
       'input[data-fieldtype="encryptedExpiryDate"]'
     ],
     card_name: [
+      'input[placeholder*="enter your name" i]',
+      'input[placeholder*="Please enter your name" i]',
       'input[name="cardholderName"]',
       'input[name="cardholder"]',
       'input[name="nameOnCard"]',
       'input[name="card_holder"]',
       'input[name="holderName"]',
-      'input[name="name"]',
       'input[name="ccname"]',
       'input[id*="cardholderName" i]',
       'input[id*="cardholder" i]',
@@ -337,6 +342,7 @@
     if (parts.length !== 2) return false;
 
     const month = parts[0].trim().padStart(2, '0');
+    const monthInt = parseInt(month).toString();
     let year = parts[1].trim();
 
     // Convert 2-digit year to 4-digit if needed
@@ -345,7 +351,8 @@
     }
     const shortYear = year.slice(-2);
 
-    let filled = false;
+    let filledMonth = false;
+    let filledYear = false;
 
     // Try combined expiry field first (MM/YY format)
     const combinedSelectors = [
@@ -367,55 +374,105 @@
       }
     }
 
-    // Try month dropdown
-    const monthSelectors = [
-      'select[id*="month" i]',
-      'select[name*="month" i]',
-      'select[aria-label*="month" i]',
-      'select[id*="expiry" i][id*="month" i]'
-    ];
-    for (const sel of monthSelectors) {
-      const monthSelect = document.querySelector(sel);
-      if (monthSelect) {
-        for (const opt of monthSelect.options) {
-          if (opt.value === month || opt.value === parseInt(month).toString() ||
-              opt.textContent.includes(month) || opt.value.padStart(2, '0') === month) {
-            monthSelect.value = opt.value;
-            monthSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            filled = true;
-            console.log('[FIFA Autofill] Filled expiry month:', month);
+    // Find all selects on page and identify month/year by their options or labels
+    const allSelects = document.querySelectorAll('select');
+    console.log('[FIFA Autofill] Found', allSelects.length, 'select elements for expiry');
+
+    for (const select of allSelects) {
+      const options = Array.from(select.options);
+      const optTexts = options.map(o => o.textContent.toLowerCase());
+      const optValues = options.map(o => o.value);
+
+      // Check if this is a month dropdown (has options like 01-12 or month names)
+      const hasMonthOptions = optTexts.some(t => t.includes('month')) ||
+                              optValues.includes('01') || optValues.includes('1') ||
+                              optTexts.some(t => t.includes('january') || t.includes('jan'));
+
+      // Check if this is a year dropdown (has 4-digit years like 2025, 2026, etc.)
+      const hasYearOptions = optTexts.some(t => t.includes('year')) ||
+                             optValues.some(v => /^20\d{2}$/.test(v)) ||
+                             optTexts.some(t => /20\d{2}/.test(t));
+
+      if (!filledMonth && hasMonthOptions && !hasYearOptions) {
+        // This is likely the month dropdown
+        for (const opt of options) {
+          if (opt.value === month || opt.value === monthInt ||
+              opt.textContent.trim() === month || opt.textContent.trim() === monthInt ||
+              opt.value.padStart(2, '0') === month) {
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            filledMonth = true;
+            console.log('[FIFA Autofill] Filled expiry month:', month, 'in select:', select.id || select.name || 'unnamed');
             break;
           }
         }
-        if (filled) break;
       }
-    }
 
-    // Try year dropdown
-    const yearSelectors = [
-      'select[id*="year" i]',
-      'select[name*="year" i]',
-      'select[aria-label*="year" i]',
-      'select[id*="expiry" i][id*="year" i]'
-    ];
-    for (const sel of yearSelectors) {
-      const yearSelect = document.querySelector(sel);
-      if (yearSelect) {
-        for (const opt of yearSelect.options) {
+      if (!filledYear && hasYearOptions && !hasMonthOptions) {
+        // This is likely the year dropdown
+        for (const opt of options) {
           if (opt.value === year || opt.value === shortYear ||
               opt.textContent.includes(year) || opt.textContent.includes(shortYear)) {
-            yearSelect.value = opt.value;
-            yearSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            filled = true;
-            console.log('[FIFA Autofill] Filled expiry year:', year);
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            filledYear = true;
+            console.log('[FIFA Autofill] Filled expiry year:', year, 'in select:', select.id || select.name || 'unnamed');
             break;
           }
         }
-        if (filled) break;
       }
     }
 
-    return filled;
+    // Fallback: Try specific selectors
+    if (!filledMonth) {
+      const monthSelectors = [
+        'select[id*="month" i]',
+        'select[name*="month" i]',
+        'select[aria-label*="month" i]'
+      ];
+      for (const sel of monthSelectors) {
+        const monthSelect = document.querySelector(sel);
+        if (monthSelect) {
+          for (const opt of monthSelect.options) {
+            if (opt.value === month || opt.value === monthInt ||
+                opt.textContent.includes(month)) {
+              monthSelect.value = opt.value;
+              monthSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              filledMonth = true;
+              console.log('[FIFA Autofill] Filled expiry month via selector:', month);
+              break;
+            }
+          }
+          if (filledMonth) break;
+        }
+      }
+    }
+
+    if (!filledYear) {
+      const yearSelectors = [
+        'select[id*="year" i]',
+        'select[name*="year" i]',
+        'select[aria-label*="year" i]'
+      ];
+      for (const sel of yearSelectors) {
+        const yearSelect = document.querySelector(sel);
+        if (yearSelect) {
+          for (const opt of yearSelect.options) {
+            if (opt.value === year || opt.value === shortYear ||
+                opt.textContent.includes(year) || opt.textContent.includes(shortYear)) {
+              yearSelect.value = opt.value;
+              yearSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              filledYear = true;
+              console.log('[FIFA Autofill] Filled expiry year via selector:', year);
+              break;
+            }
+          }
+          if (filledYear) break;
+        }
+      }
+    }
+
+    return filledMonth || filledYear;
   }
 
   // Detect if we're on a payment page
