@@ -273,13 +273,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       showStatus('Injecting autofill script...');
 
-      // Inject the autofill function
+      // Inject the autofill function into all frames
       try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
           func: runAutofill,
           args: [account]
         });
+        console.log('Injection results:', results);
         showStatus('Autofill triggered! Check the page.');
       } catch (err) {
         console.error('Injection error:', err);
@@ -290,6 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Autofill function to be injected
   function runAutofill(account) {
+    // Alert to confirm script is running
+    const inputCount = document.querySelectorAll('input').length;
+    alert('[FIFA Autofill] Script running! Found ' + inputCount + ' inputs. Email: ' + account.email);
+
     console.log('[FIFA Autofill] Running autofill for:', account.email);
 
     function setValue(element, value) {
