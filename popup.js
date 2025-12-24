@@ -407,43 +407,114 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Handle expiry dropdowns
-    if (account.card_expiry) {
-      const parts = account.card_expiry.split('/');
-      if (parts.length === 2) {
-        const month = parts[0].trim().padStart(2, '0');
-        let year = parts[1].trim();
-        if (year.length === 2) year = '20' + year;
+    // Handle all select dropdowns
+    const selects = document.querySelectorAll('select');
+    for (const sel of selects) {
+      const opts = Array.from(sel.options);
+      const optTexts = opts.map(o => o.textContent.toLowerCase());
+      const selId = (sel.id || '').toLowerCase();
+      const selName = (sel.name || '').toLowerCase();
 
-        const selects = document.querySelectorAll('select');
-        for (const sel of selects) {
-          const opts = Array.from(sel.options);
-          const optTexts = opts.map(o => o.textContent.toLowerCase());
+      // Get nearby label text
+      let labelText = '';
+      let parent = sel.parentElement;
+      for (let i = 0; i < 3 && parent; i++) {
+        labelText += ' ' + (parent.textContent || '').toLowerCase();
+        parent = parent.parentElement;
+      }
 
-          // Month
-          if (optTexts.some(t => t.includes('month')) || opts.some(o => o.value === '01' || o.value === '1')) {
-            for (const opt of opts) {
-              if (opt.value === month || opt.value === parseInt(month).toString()) {
-                sel.value = opt.value;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-                filled++;
-                break;
-              }
-            }
+      // Gender dropdown
+      if ((selId.includes('gender') || selName.includes('gender') || labelText.includes('gender') || optTexts.some(t => t.includes('select your gender'))) && account.gender) {
+        for (const opt of opts) {
+          if (opt.value.toLowerCase().includes(account.gender.toLowerCase()) ||
+              opt.textContent.toLowerCase().includes(account.gender.toLowerCase())) {
+            sel.value = opt.value;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            filled++;
+            console.log('[FIFA Autofill] Filled gender:', account.gender);
+            break;
           }
-          // Year
-          if (optTexts.some(t => t.includes('year')) || opts.some(o => /^20\d{2}$/.test(o.value))) {
-            const shortYear = year.slice(-2);
-            for (const opt of opts) {
-              if (opt.value === year || opt.value === shortYear || opt.textContent.includes(year)) {
-                sel.value = opt.value;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-                filled++;
-                break;
-              }
+        }
+        continue;
+      }
+
+      // Language dropdown
+      if ((selId.includes('language') || selName.includes('language') || labelText.includes('language') || labelText.includes('communication') || optTexts.some(t => t.includes('choose language'))) && account.language) {
+        for (const opt of opts) {
+          if (opt.value.toLowerCase().includes(account.language.toLowerCase()) ||
+              opt.textContent.toLowerCase().includes(account.language.toLowerCase())) {
+            sel.value = opt.value;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            filled++;
+            console.log('[FIFA Autofill] Filled language:', account.language);
+            break;
+          }
+        }
+        continue;
+      }
+
+      // Month dropdown (for card expiry)
+      if (account.card_expiry && (optTexts.some(t => t.includes('month')) || opts.some(o => o.value === '01' || o.value === '1'))) {
+        const parts = account.card_expiry.split('/');
+        if (parts.length === 2) {
+          const month = parts[0].trim().padStart(2, '0');
+          for (const opt of opts) {
+            if (opt.value === month || opt.value === parseInt(month).toString()) {
+              sel.value = opt.value;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              filled++;
+              break;
             }
           }
         }
+        continue;
+      }
+
+      // Year dropdown (for card expiry)
+      if (account.card_expiry && (optTexts.some(t => t.includes('year')) || opts.some(o => /^20\d{2}$/.test(o.value)))) {
+        const parts = account.card_expiry.split('/');
+        if (parts.length === 2) {
+          let year = parts[1].trim();
+          if (year.length === 2) year = '20' + year;
+          const shortYear = year.slice(-2);
+          for (const opt of opts) {
+            if (opt.value === year || opt.value === shortYear || opt.textContent.includes(year)) {
+              sel.value = opt.value;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              filled++;
+              break;
+            }
+          }
+        }
+        continue;
+      }
+
+      // Country dropdown
+      if ((selId.includes('country') || selName.includes('country') || labelText.includes('country')) && account.country) {
+        for (const opt of opts) {
+          if (opt.value.toLowerCase().includes(account.country.toLowerCase()) ||
+              opt.textContent.toLowerCase().includes(account.country.toLowerCase())) {
+            sel.value = opt.value;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            filled++;
+            break;
+          }
+        }
+        continue;
+      }
+
+      // State/Province dropdown
+      if ((selId.includes('state') || selId.includes('province') || selName.includes('state') || selName.includes('province') || labelText.includes('state') || labelText.includes('province')) && account.province) {
+        for (const opt of opts) {
+          if (opt.value.toLowerCase().includes(account.province.toLowerCase()) ||
+              opt.textContent.toLowerCase().includes(account.province.toLowerCase())) {
+            sel.value = opt.value;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            filled++;
+            break;
+          }
+        }
+        continue;
       }
     }
 
