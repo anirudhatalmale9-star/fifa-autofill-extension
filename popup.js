@@ -291,10 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Autofill function to be injected
   function runAutofill(account) {
-    // Alert to confirm script is running
-    const inputCount = document.querySelectorAll('input').length;
-    alert('[FIFA Autofill] Script running! Found ' + inputCount + ' inputs. Email: ' + account.email);
-
     console.log('[FIFA Autofill] Running autofill for:', account.email);
 
     function setValue(element, value) {
