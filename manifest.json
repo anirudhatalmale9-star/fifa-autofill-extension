@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+  "name": "FIFA Autofill",
+  "version": "1.0.0",
+  "description": "Auto-fill FIFA forms from CSV data with Alt+A hotkey",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "https://*.fifa.com/*",
+    "https://auth.fifa.com/*",
+    "https://*.tickets.fifa.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.fifa.com/*",
+        "https://auth.fifa.com/*",
+        "https://*.tickets.fifa.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fifa-autofill@example.com"
+    }
+  }
+}

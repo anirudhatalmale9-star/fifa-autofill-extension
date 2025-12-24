@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 350px;
+      padding: 15px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h2 {
+      margin: 0 0 15px 0;
+      color: #fff;
+      font-size: 16px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+    .section {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #aaa;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 8px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background: #16213e;
+      color: #fff;
+      font-family: monospace;
+      font-size: 11px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background: #16213e;
+      color: #fff;
+      font-size: 13px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+    .btn-primary {
+      background: #0f4c75;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #1b6ca8;
+    }
+    .btn-success {
+      background: #1a472a;
+      color: #fff;
+    }
+    .btn-success:hover {
+      background: #246b3a;
+    }
+    .status {
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .status.success {
+      background: #1a472a;
+      color: #8f8;
+    }
+    .status.error {
+      background: #4a1a1a;
+      color: #f88;
+    }
+    .info {
+      background: #16213e;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #888;
+      margin-top: 10px;
+    }
+    .account-preview {
+      background: #16213e;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-size: 11px;
+    }
+    .account-preview div {
+      margin: 2px 0;
+    }
+    .account-preview span {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h2>FIFA Autofill</h2>
+
+  <div class="section">
+    <label>Paste CSV Data (with headers):</label>
+    <textarea id="csvInput" placeholder="email,password,last_name,first_name,full_name,country,address,city,zip_code,province,phone,card_number,cvc,card_expiry,card_name
+john@email.com,pass123,Doe,John,John Doe,USA,123 Main St,New York,10001,New York,1234567890,4111111111111111,123,12/25,John Doe"></textarea>
+    <button class="btn-primary" id="loadBtn">Load CSV Data</button>
+  </div>
+
+  <div class="section">
+    <label>Select Account:</label>
+    <select id="accountSelect">
+      <option value="">-- Load CSV first --</option>
+    </select>
+  </div>
+
+  <div id="accountPreview" class="account-preview" style="display:none;">
+    <div><span>Email:</span> <span id="previewEmail"></span></div>
+    <div><span>Name:</span> <span id="previewName"></span></div>
+    <div><span>Phone:</span> <span id="previewPhone"></span></div>
+  </div>
+
+  <div id="status" class="status" style="display:none;"></div>
+
+  <div class="info">
+    <strong>Hotkey:</strong> Press <b>Alt+A</b> on any FIFA page to autofill.<br><br>
+    <strong>CSV Columns:</strong> email, password, last_name, first_name, full_name, country, address, city, zip_code, province, phone, card_number, cvc, card_expiry, card_name
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
