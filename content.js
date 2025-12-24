@@ -1,6 +1,7 @@
 /**
  * FIFA AUTOFILL - Content Script
  * Auto-fills FIFA forms with account data using Alt+A hotkey
+ * Chrome/Mimic compatible
  */
 
 (function() {
@@ -12,7 +13,9 @@
     email: [
       'input[name="email"]',
       'input[type="email"]',
-      'input[id*="email"]',
+      'input[id*="email" i]',
+      'input[id="email"]',
+      'input#email',
       'input[placeholder*="email" i]',
       'input[autocomplete="email"]',
       'input[autocomplete="username"]'
@@ -20,7 +23,8 @@
     password: [
       'input[name="password"]',
       'input[type="password"]',
-      'input[id*="password"]',
+      'input[id*="password" i]',
+      'input#password',
       'input[placeholder*="password" i]',
       'input[autocomplete="current-password"]',
       'input[autocomplete="new-password"]'
@@ -31,8 +35,9 @@
       'input[name="firstName"]',
       'input[name="first_name"]',
       'input[name="firstname"]',
-      'input[id*="firstName"]',
-      'input[id*="first_name"]',
+      'input[id*="firstName" i]',
+      'input[id*="firstname" i]',
+      'input#firstname',
       'input[placeholder*="first name" i]',
       'input[autocomplete="given-name"]'
     ],
@@ -40,8 +45,9 @@
       'input[name="lastName"]',
       'input[name="last_name"]',
       'input[name="lastname"]',
-      'input[id*="lastName"]',
-      'input[id*="last_name"]',
+      'input[id*="lastName" i]',
+      'input[id*="lastname" i]',
+      'input#lastname',
       'input[placeholder*="last name" i]',
       'input[autocomplete="family-name"]'
     ],
@@ -49,8 +55,9 @@
       'input[name="fullName"]',
       'input[name="full_name"]',
       'input[name="name"]',
-      'input[id*="fullName"]',
+      'input[id*="fullName" i]',
       'input[placeholder*="full name" i]',
+      'input[placeholder*="your name" i]',
       'input[autocomplete="name"]'
     ],
 
@@ -58,8 +65,10 @@
     address: [
       'input[name="address"]',
       'input[name="address1"]',
+      'input[name="address_line_1"]',
       'input[name="street"]',
-      'input[id*="address"]',
+      'input[id*="address" i]',
+      'input#address_line_1',
       'input[placeholder*="address" i]',
       'input[placeholder*="street" i]',
       'input[autocomplete="street-address"]',
@@ -67,7 +76,9 @@
     ],
     city: [
       'input[name="city"]',
-      'input[id*="city"]',
+      'input[name="address_town_standalone"]',
+      'input[id*="city" i]',
+      'input#address_town_standalone',
       'input[placeholder*="city" i]',
       'input[autocomplete="address-level2"]'
     ],
@@ -77,8 +88,10 @@
       'input[name="zip_code"]',
       'input[name="postalCode"]',
       'input[name="postal_code"]',
-      'input[id*="zip"]',
-      'input[id*="postal"]',
+      'input[name="address_zipcode_standalone"]',
+      'input[id*="zip" i]',
+      'input[id*="postal" i]',
+      'input#address_zipcode_standalone',
       'input[placeholder*="zip" i]',
       'input[placeholder*="postal" i]',
       'input[autocomplete="postal-code"]'
@@ -87,21 +100,24 @@
       'input[name="state"]',
       'input[name="province"]',
       'input[name="region"]',
-      'input[id*="state"]',
-      'input[id*="province"]',
-      'input[placeholder*="state" i]',
-      'input[placeholder*="province" i]',
+      'input[id*="state" i]',
+      'input[id*="province" i]',
+      'input#locality_STATE',
       'select[name="state"]',
       'select[name="province"]',
-      'select[id*="state"]',
-      'select[id*="province"]',
+      'select[id*="state" i]',
+      'select[id*="province" i]',
+      'select#locality_STATE',
+      'input[placeholder*="state" i]',
+      'input[placeholder*="province" i]',
       'input[autocomplete="address-level1"]'
     ],
     country: [
       'input[name="country"]',
-      'input[id*="country"]',
+      'input[id*="country" i]',
       'select[name="country"]',
-      'select[id*="country"]',
+      'select[id*="country" i]',
+      'select#country',
       'input[autocomplete="country-name"]'
     ],
     phone: [
@@ -109,54 +125,72 @@
       'input[name="phoneNumber"]',
       'input[name="phone_number"]',
       'input[name="mobile"]',
+      'input[name="mobile_number"]',
       'input[type="tel"]',
-      'input[id*="phone"]',
+      'input[id*="phone" i]',
+      'input[id*="mobile" i]',
+      'input#mobile_number',
       'input[placeholder*="phone" i]',
       'input[autocomplete="tel"]'
     ],
 
-    // Payment fields
+    // Payment fields - expanded for FIFA payment page
     card_number: [
       'input[name="cardNumber"]',
       'input[name="card_number"]',
       'input[name="ccnumber"]',
-      'input[id*="cardNumber"]',
-      'input[id*="card-number"]',
+      'input[name="pan"]',
+      'input[id*="cardNumber" i]',
+      'input[id*="card-number" i]',
+      'input[id*="card_number" i]',
       'input[placeholder*="card number" i]',
-      'input[autocomplete="cc-number"]'
+      'input[placeholder*="1234" i]',
+      'input[autocomplete="cc-number"]',
+      'input[data-testid*="card" i]'
     ],
     cvc: [
       'input[name="cvc"]',
       'input[name="cvv"]',
       'input[name="securityCode"]',
-      'input[id*="cvc"]',
-      'input[id*="cvv"]',
+      'input[name="security_code"]',
+      'input[id*="cvc" i]',
+      'input[id*="cvv" i]',
+      'input[id*="security" i]',
       'input[placeholder*="cvc" i]',
       'input[placeholder*="cvv" i]',
+      'input[placeholder*="security" i]',
       'input[autocomplete="cc-csc"]'
     ],
     card_expiry: [
       'input[name="expiry"]',
       'input[name="expiryDate"]',
       'input[name="expiration"]',
-      'input[id*="expir"]',
+      'input[name="exp"]',
+      'input[id*="expir" i]',
+      'input[id*="exp" i]',
       'input[placeholder*="expir" i]',
       'input[placeholder*="mm/yy" i]',
+      'input[placeholder*="mm / yy" i]',
       'input[autocomplete="cc-exp"]'
     ],
     card_name: [
       'input[name="cardholderName"]',
       'input[name="cardholder"]',
       'input[name="nameOnCard"]',
-      'input[id*="cardholderName"]',
-      'input[id*="cardholder"]',
+      'input[name="card_holder"]',
+      'input[name="holderName"]',
+      'input[id*="cardholderName" i]',
+      'input[id*="cardholder" i]',
+      'input[id*="holder" i]',
       'input[placeholder*="name on card" i]',
       'input[placeholder*="cardholder" i]',
+      'input[placeholder*="card holder" i]',
+      'input[placeholder*="your name" i]',
       'input[autocomplete="cc-name"]'
     ]
   };
 
-  // Set value with proper event triggering
+  // Set value with proper event triggering for React forms
   function setValue(element, value) {
     if (!element || !value) return false;
 
@@ -177,22 +211,14 @@
       return false;
     }
 
-    // For input elements - clear first
-    element.value = '';
-
-    // Set the value
-    element.value = value;
-
-    // Trigger all necessary events for React/Angular/Vue forms
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-    element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-
-    // For React specifically
+    // For React forms - use native setter
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
     nativeInputValueSetter.call(element, value);
+
+    // Trigger all necessary events
     element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+    element.dispatchEvent(new Event('blur', { bubbles: true }));
 
     return true;
   }
@@ -204,17 +230,107 @@
     const selectors = FIELD_MAPPINGS[fieldName];
     if (!selectors) return false;
 
+    // Try main document first
     for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element && element.offsetParent !== null) { // Check if visible
-        console.log(`[FIFA Autofill] Filling ${fieldName}:`, selector);
-        setValue(element, value);
-        return true;
+      try {
+        const element = document.querySelector(selector);
+        if (element && (element.offsetParent !== null || element.offsetHeight > 0)) {
+          console.log(`[FIFA Autofill] Filling ${fieldName}:`, selector);
+          setValue(element, value);
+          return true;
+        }
+      } catch (e) {
+        // Selector may be invalid, skip
+      }
+    }
+
+    // Try to find by label text
+    const labels = document.querySelectorAll('label');
+    for (const label of labels) {
+      const labelText = label.textContent.toLowerCase();
+      if (labelText.includes(fieldName.replace('_', ' ')) ||
+          labelText.includes(fieldName.replace('_', ''))) {
+        const forId = label.getAttribute('for');
+        if (forId) {
+          const input = document.getElementById(forId);
+          if (input) {
+            console.log(`[FIFA Autofill] Filling ${fieldName} via label:`, forId);
+            setValue(input, value);
+            return true;
+          }
+        }
+        // Try input inside label
+        const input = label.querySelector('input, select');
+        if (input) {
+          console.log(`[FIFA Autofill] Filling ${fieldName} via label child`);
+          setValue(input, value);
+          return true;
+        }
       }
     }
 
     console.log(`[FIFA Autofill] Field ${fieldName} not found on page`);
     return false;
+  }
+
+  // Handle expiry date split into month/year dropdowns
+  function fillExpiryDate(expiry) {
+    if (!expiry) return false;
+
+    // expiry format: "10/30" or "10/2030"
+    const parts = expiry.split('/');
+    if (parts.length !== 2) return false;
+
+    const month = parts[0].trim();
+    let year = parts[1].trim();
+
+    // Convert 2-digit year to 4-digit if needed
+    if (year.length === 2) {
+      year = '20' + year;
+    }
+
+    let filled = false;
+
+    // Try month dropdown
+    const monthSelectors = ['select[id*="month" i]', 'select[name*="month" i]', 'select[aria-label*="month" i]'];
+    for (const sel of monthSelectors) {
+      const monthSelect = document.querySelector(sel);
+      if (monthSelect) {
+        // Try to match month value
+        for (const opt of monthSelect.options) {
+          if (opt.value === month || opt.value === parseInt(month).toString() ||
+              opt.textContent.includes(month)) {
+            monthSelect.value = opt.value;
+            monthSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            filled = true;
+            console.log('[FIFA Autofill] Filled expiry month:', month);
+            break;
+          }
+        }
+        if (filled) break;
+      }
+    }
+
+    // Try year dropdown
+    const yearSelectors = ['select[id*="year" i]', 'select[name*="year" i]', 'select[aria-label*="year" i]'];
+    for (const sel of yearSelectors) {
+      const yearSelect = document.querySelector(sel);
+      if (yearSelect) {
+        for (const opt of yearSelect.options) {
+          if (opt.value === year || opt.value === year.slice(-2) ||
+              opt.textContent.includes(year) || opt.textContent.includes(year.slice(-2))) {
+            yearSelect.value = opt.value;
+            yearSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            filled = true;
+            console.log('[FIFA Autofill] Filled expiry year:', year);
+            break;
+          }
+        }
+        if (filled) break;
+      }
+    }
+
+    return filled;
   }
 
   // Main autofill function
@@ -225,6 +341,7 @@
     }
 
     console.log('[FIFA Autofill] Starting autofill with account:', account.email);
+    console.log('[FIFA Autofill] Account data:', account);
 
     let filledCount = 0;
 
@@ -234,6 +351,20 @@
         if (fillField(fieldName, value)) {
           filledCount++;
         }
+      }
+    }
+
+    // Special handling for expiry date (month/year dropdowns)
+    if (account.card_expiry) {
+      if (fillExpiryDate(account.card_expiry)) {
+        filledCount++;
+      }
+    }
+
+    // Use full_name for card_name if card_name wasn't filled
+    if (account.full_name && !account.card_name) {
+      if (fillField('card_name', account.full_name)) {
+        filledCount++;
       }
     }
 
@@ -273,9 +404,7 @@
 
   // Get selected account from storage and autofill
   function triggerAutofill() {
-    const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
-
-    browserAPI.storage.local.get(['accounts', 'selectedRow']).then((result) => {
+    chrome.storage.local.get(['accounts', 'selectedRow'], (result) => {
       const accounts = result.accounts || [];
       const selectedRow = result.selectedRow || 0;
       const account = accounts[selectedRow];
@@ -285,9 +414,6 @@
       } else {
         showNotification('No account data! Load CSV in extension popup first.', true);
       }
-    }).catch((err) => {
-      console.error('[FIFA Autofill] Error:', err);
-      showNotification('Error loading account data', true);
     });
   }
 
@@ -301,16 +427,13 @@
   });
 
   // Listen for messages from popup/background
-  const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
-  if (browserAPI && browserAPI.runtime) {
-    browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.action === 'autofill') {
-        autofillForm(message.account);
-        sendResponse({ status: 'done' });
-      }
-      return true;
-    });
-  }
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'autofill') {
+      autofillForm(message.account);
+      sendResponse({ status: 'done' });
+    }
+    return true;
+  });
 
   console.log('[FIFA Autofill] Extension loaded. Press Alt+A to autofill forms.');
 
