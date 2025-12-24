@@ -1,6 +1,6 @@
 /**
  * FIFA AUTOFILL - Popup Script
- * Chrome/Mimic compatible
+ * Chrome/Mimic compatible - Auto-loads embedded accounts
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,13 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Load saved data on popup open
+  // Load saved data on popup open - auto-load embedded accounts if no saved data
   storage.get(['accounts', 'selectedRow', 'csvData'], (result) => {
-    if (result.csvData) {
-      csvInput.value = result.csvData;
-    }
     if (result.accounts && result.accounts.length > 0) {
+      // Use saved accounts
+      if (result.csvData) {
+        csvInput.value = result.csvData;
+      }
       populateAccountSelect(result.accounts, result.selectedRow || 0);
+    } else if (typeof EMBEDDED_ACCOUNTS !== 'undefined' && EMBEDDED_ACCOUNTS.length > 0) {
+      // Auto-load embedded accounts on first run
+      console.log('[FIFA Autofill] Auto-loading embedded accounts...');
+      storage.set({
+        accounts: EMBEDDED_ACCOUNTS,
+        selectedRow: 0
+      }, () => {
+        populateAccountSelect(EMBEDDED_ACCOUNTS, 0);
+        showStatus(`Auto-loaded ${EMBEDDED_ACCOUNTS.length} embedded accounts!`);
+      });
     }
   });
 
